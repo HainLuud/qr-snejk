@@ -34,17 +34,19 @@ class Snake:
     def __init__(self, id, position, moveDecider = "random"):
         self.id = id
         
-        self.ate = False
         self.lastDirection = (position[-1][0]-position[-2][0], position[-1][1]-position[-2][1])
-        # List, position[0] == tail, position[-1] == head
+        # List where, position[0] == tail, position[-1] == head
         self.position = position
         for pos in position:
             BOARD[pos[1]][pos[0]] = id
         
+        # Function which gets called when the snake needs to make a move.
         if moveDecider == "random":
             self.moveDecider = self.randomMove
-        elif moveDecider == "Siia tuleks lisada oma decideri nimi":
-            pass
+        elif moveDecider == "ai":
+            self.moveDecider = self.aiMove
+        elif moveDecider == "qr":
+            self.moveDecider = self.qrMove
         
     # All possible moves for snake, that dont hit itself.
     def possibleMoves(self):
@@ -68,7 +70,18 @@ class Snake:
             moves = [UP, DOWN, LEFT, RIGHT]
         return random.choice(moves)
 
-    # Moves the sanake based on it's moveDecider
+    # AI loogika, peab tagastama ühe võimalustest [UP, DOWN, LEFT, RIGHT]
+    def aiMove(self):
+        
+        return self.randomMove()
+
+    
+    # QR loogika, peab tagastama ühe võimalustest [UP, DOWN, LEFT, RIGHT]
+    def qrMove(self):
+
+        return self.randomMove()
+
+    # Moves the snake based on its moveDecider
     def move(self):
         direction = self.moveDecider()
         head = self.position[-1]
@@ -96,16 +109,20 @@ class Snake:
 
 # All the snakes will be stored in array
 SNAKES = []
-SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)]))
-SNAKES.append(Snake(2, [(5,5), (6,5), (7,5), (8,5), (9,5)]))
+
 
 def main():
-    global SCREEN, CLOCK, FOOD_LOC
+    global SCREEN, CLOCK, FOOD_LOC, SNAKES
     pygame.init()
     SCREEN = pygame.display.set_mode((WINDOW_HEIGHT, WINDOW_WIDTH))
     CLOCK = pygame.time.Clock()
     generateFood()
 
+    # Usside loomine
+    # AI
+    SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "ai"))
+    # QR
+    SNAKES.append(Snake(2, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
 
     while True:
         draw()
@@ -161,6 +178,7 @@ def drawGameEndPanel():
     myfont = pygame.font.SysFont("monospace", 40)
     label = myfont.render("GAME OVER!", 1, (0,0,0), (245,245,245))
     SCREEN.blit(label, (BOARD_WIDTH*BLOCK_SIZE//2 - 120, BOARD_HEIGHT*BLOCK_SIZE//2 - 20))
+
 
 def generateFood():
     global FOOD_LOC
