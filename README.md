@@ -30,7 +30,10 @@ funktsioonid:
 
 ## Vähem oluline
 Muutujad:
-GAME_SPEED - mängu kiirus(fps)
-BOARD_WIDTH - ruudustiku tulpade arv
-BOARD_HEIGHT - ruudustiku ridade arv
-BLOCK_SIZE - ühe ruudu külg pikslites
+- GAME_SPEED - mängu kiirus(fps)
+- BOARD_WIDTH - ruudustiku tulpade arv
+- BOARD_HEIGHT - ruudustiku ridade arv
+- BLOCK_SIZE - ühe ruudu külg pikslites
+
+Funktsioonid:
+- main() - mängu setup ja loop.
