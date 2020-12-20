@@ -1,6 +1,9 @@
 # QR-Snek
 
 ## Olulisemad asjad
+### Pygame
+Mängu toimimiseks on vaja pygame moodulit.  
+```pip install pygame ```
 
 ### Vaja implementeerida
 Ussi klassi sees on kaks funktsiooni, mis peavad ütlema, kuhu suunas uss järgmisena liigub.
