@@ -36,4 +36,4 @@ Muutujad:
 - BLOCK_SIZE - ühe ruudu külg pikslites
 
 Funktsioonid:
-- main() - mängu setup ja loop.
+- main() - mängu setup ja loop. Siin toimub ka usside loomine. Arendamise ajaks võite ühe ussidest välja kommenteerida.
