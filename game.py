@@ -27,7 +27,7 @@ GAME_SPEED = 10
 
 ###################### SNAKE ######################
 # On the next move snakes head will be moved by (x, y)
-UP, DOWN, LEFT, RIGHT = ((0,1), (0,-1), (-1,0), (1,0))
+UP, DOWN, LEFT, RIGHT = ((0,-1), (0,1), (-1,0), (1,0))
 
 
 class Snake:
