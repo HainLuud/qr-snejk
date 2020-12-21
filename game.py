@@ -1,6 +1,7 @@
 import pygame
 import random
 import sys
+from Node import Node
 from functools import reduce
 
 ###################### BOARD/WINDOW ######################
@@ -51,14 +52,22 @@ class Snake:
     # All possible moves for snake, that dont hit itself.
     def possibleMoves(self):
         moves = []
+        # Array of all occupied positions
+        occupied = SNAKES[0].position + SNAKES[1].position
+
         for move in (UP, DOWN, LEFT, RIGHT):
             head = self.position[-1]
             new_x = (head[0] + move[0]) % BOARD_WIDTH
             new_y = (head[1] + move[1]) % BOARD_HEIGHT
 
+            """
             # Väldib iseendale otsa sõitmist
             if BOARD[new_y][new_x] != self.id:
                 moves.append(move)
+            """
+            # Väldib endasse ja teise snek-i sisse sõitmist
+            if (new_x, new_y) not in occupied:
+                moves.append(move)            
 
         return moves
 
@@ -70,9 +79,58 @@ class Snake:
             moves = [UP, DOWN, LEFT, RIGHT]
         return random.choice(moves)
 
+    # Return node with updated distances from starNode, endNode and the f-score using Manhattan Distance
+    def setNodeDistances(self, node, start, end):
+        node.g = abs(node.position[0] - start.position[0]) + abs(node.position[1] - start.position[1])
+        node.h = abs(node.position[0] - end.position[0]) + abs(node.position[1] - end.position[1])
+        node.f = node.g + node.h
+        return node
+
+    def add_to_open(self, open, neighbor):
+        for node in open:
+            if (neighbor == node and neighbor.f >= node.f):
+                return False
+        return True
     # AI loogika, peab tagastama ühe võimalustest [UP, DOWN, LEFT, RIGHT]
     def aiMove(self):
+        # Code influence from https://www.annytab.com/a-star-search-algorithm-in-python/
+
+        openNodes = []
+        closedNodes = []
+
+        startNode = Node(self.position[-1], None, None) # head location
+        endNode = Node(FOOD_LOC, None, None)
+
+        openNodes.append(startNode)
+        lastMove = None
+        while len(openNodes) != 0:
+            # Use list as a priority queue
+            openNodes.sort()
+            currentNode = openNodes.pop(0)
+            closedNodes.append(currentNode)
+            
+            if currentNode == endNode:
+                while currentNode != startNode:
+                    prevNode = currentNode
+                    currentNode = currentNode.parent
+                print("picked best move", prevNode.moveMade)
+                return prevNode.moveMade
+            
+            for move in self.possibleMoves():
+                neighbor = Node((currentNode.position[0] + move[0], 
+                                currentNode.position[1] + move[1]), currentNode, move)
+            
+                if neighbor in closedNodes:
+                    print("In closed!")
+                    continue
+                
+                neighbor =  self.setNodeDistances(neighbor, startNode, endNode)
+
+                if (self.add_to_open(openNodes, neighbor)):
+                    openNodes.append(neighbor)     
         
+        # Return random move, if no path could be found
+        print("still picked random  ¯\_(ツ)_/¯")
         return self.randomMove()
 
     
