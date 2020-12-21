@@ -7,7 +7,7 @@ from functools import reduce
 ###################### BOARD/WINDOW ######################
 # Colours
 TILE_COLOR = (50, 50, 50)
-BODY_COLOR = (245, 245, 245)
+GRID_COLOR = (245, 245, 245)
 HEAD_COLOR = (255,187,51)
 FOOD_COLOR = (255,64,25)
 
@@ -24,17 +24,19 @@ FOOD_LOC = None
 
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
-GAME_SPEED = 10
+GAME_SPEED = 50
 
 ###################### SNAKE ######################
 # On the next move snakes head will be moved by (x, y)
 UP, DOWN, LEFT, RIGHT = ((0,-1), (0,1), (-1,0), (1,0))
 
 
+
 class Snake:
     def __init__(self, id, position, moveDecider = "random"):
         self.id = id
-        
+        self.head_color, self.body_color = generateColor()
+         
         self.lastDirection = (position[-1][0]-position[-2][0], position[-1][1]-position[-2][1])
         # List where, position[0] == tail, position[-1] == head
         self.position = position
@@ -53,7 +55,7 @@ class Snake:
     def possibleMoves(self, startPos):
         moves = []
         # Array of all occupied positions
-        occupied = SNAKES[0].position + SNAKES[1].position
+        occupied = reduce(lambda a,b: a+b, [snake.position for snake in SNAKES])
 
         for move in (UP, DOWN, LEFT, RIGHT):
             frm = startPos
@@ -116,8 +118,9 @@ class Snake:
                 return prevNode.moveMade
             
             for move in self.possibleMoves(currentNode.position):
-                neighbor = Node((currentNode.position[0] + move[0], 
-                                currentNode.position[1] + move[1]), currentNode, move)
+                new_x = (currentNode.position[0] + move[0]) % BOARD_WIDTH
+                new_y = (currentNode.position[1] + move[1]) % BOARD_HEIGHT
+                neighbor = Node((new_x, new_y), currentNode, move)
             
                 if neighbor in closedNodes:
                     continue
@@ -171,6 +174,8 @@ def main():
     global SCREEN, CLOCK, FOOD_LOC, SNAKES
     pygame.init()
     SCREEN = pygame.display.set_mode((WINDOW_HEIGHT, WINDOW_WIDTH))
+    pygame.display.set_caption('QR-Snek')
+
     CLOCK = pygame.time.Clock()
     generateFood()
 
@@ -180,16 +185,20 @@ def main():
     # QR
     SNAKES.append(Snake(2, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
 
+    # Game loop
+    draw()
     while True:
-        draw()
         
         if not gameOver():
             # Move all snakes
             for snake in SNAKES:
                 snake.move()
+            draw()
         else:
             drawGameEndPanel()
 
+        
+        
         # Handle key presses
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -209,9 +218,9 @@ def draw():
             rect = pygame.Rect(x*BLOCK_SIZE, y*BLOCK_SIZE,
                             BLOCK_SIZE, BLOCK_SIZE)
             if BOARD[y][x] == None:
-                pygame.draw.rect(SCREEN, BODY_COLOR, rect, 1)
+                pygame.draw.rect(SCREEN, GRID_COLOR, rect, 1)
             else:
-                pygame.draw.rect(SCREEN, BODY_COLOR, rect)
+                pygame.draw.rect(SCREEN, GRID_COLOR, rect)
 
     #### Snakes
     for snake in SNAKES:
@@ -219,11 +228,11 @@ def draw():
         for x,y in snake.position:
             rect = pygame.Rect(x*BLOCK_SIZE, y*BLOCK_SIZE,
                                 BLOCK_SIZE, BLOCK_SIZE)
-            pygame.draw.rect(SCREEN, BODY_COLOR, rect)
+            pygame.draw.rect(SCREEN, snake.body_color, rect)
         # Head
         rect = pygame.Rect(snake.position[-1][0]*BLOCK_SIZE, snake.position[-1][1]*BLOCK_SIZE,
                             BLOCK_SIZE, BLOCK_SIZE)
-        pygame.draw.rect(SCREEN, HEAD_COLOR, rect)
+        pygame.draw.rect(SCREEN, snake.head_color, rect)
 
     #### Food
     rect = pygame.Rect(FOOD_LOC[0]*BLOCK_SIZE, FOOD_LOC[1]*BLOCK_SIZE,
@@ -253,6 +262,18 @@ def generateFood():
 def gameOver():
     bodies = reduce(lambda a,b: a+b, [snake.position for snake in SNAKES])
     return len(bodies) != len(set(bodies)) 
+
+# Generates head and body color for the snake
+def generateColor():
+    head_color = [random.randint(150,220),0,0] 
+    random.shuffle(head_color)
+    
+    # Every color value gets 
+    body_color = [min(255, x + int((255-x)/1.4)) for x in head_color.copy()]
+
+
+    #return ((20,20,20), (245,245,245))
+    return head_color, body_color
 
 # run the main function only if this module is executed as the main script
 # (if you import this as a module then nothing is executed)
