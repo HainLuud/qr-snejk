@@ -49,16 +49,16 @@ class Snake:
         elif moveDecider == "qr":
             self.moveDecider = self.qrMove
         
-    # All possible moves for snake, that dont hit itself.
-    def possibleMoves(self):
+    # All possible moves for snake, that, dont hit itself.
+    def possibleMoves(self, startPos):
         moves = []
         # Array of all occupied positions
         occupied = SNAKES[0].position + SNAKES[1].position
 
         for move in (UP, DOWN, LEFT, RIGHT):
-            head = self.position[-1]
-            new_x = (head[0] + move[0]) % BOARD_WIDTH
-            new_y = (head[1] + move[1]) % BOARD_HEIGHT
+            frm = startPos
+            new_x = (frm[0] + move[0]) % BOARD_WIDTH
+            new_y = (frm[1] + move[1]) % BOARD_HEIGHT
 
             """
             # Väldib iseendale otsa sõitmist
@@ -73,7 +73,7 @@ class Snake:
 
     # Returns a random move from possibleMoves()
     def randomMove(self):
-        moves = self.possibleMoves()
+        moves = self.possibleMoves(self.position[-1])
         # If no move is possible, choose random
         if len(moves) == 0:
             moves = [UP, DOWN, LEFT, RIGHT]
@@ -113,15 +113,13 @@ class Snake:
                 while currentNode != startNode:
                     prevNode = currentNode
                     currentNode = currentNode.parent
-                print("picked best move", prevNode.moveMade)
                 return prevNode.moveMade
             
-            for move in self.possibleMoves():
+            for move in self.possibleMoves(currentNode.position):
                 neighbor = Node((currentNode.position[0] + move[0], 
                                 currentNode.position[1] + move[1]), currentNode, move)
             
                 if neighbor in closedNodes:
-                    print("In closed!")
                     continue
                 
                 neighbor =  self.setNodeDistances(neighbor, startNode, endNode)
