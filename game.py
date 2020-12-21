@@ -24,7 +24,7 @@ FOOD_LOC = None
 
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
-GAME_SPEED = 50
+GAME_SPEED = 10
 
 ###################### SNAKE ######################
 # On the next move snakes head will be moved by (x, y)
