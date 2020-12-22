@@ -3,6 +3,7 @@ import random
 import sys
 from Node import Node
 from functools import reduce
+import qr_reader as qr
 
 ###################### BOARD/WINDOW ######################
 # Colours
@@ -25,7 +26,9 @@ FOOD_LOC = None
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
 GAME_SPEED = 10
-
+# Tilt sensitivity. When player tilts the QR code at {TILT_SENSITIVITY} degrees the
+# snake will change direction (according to the direction of the tilt).
+TILT_SENSITIVITY = 10
 ###################### SNAKE ######################
 # On the next move snakes head will be moved by (x, y)
 UP, DOWN, LEFT, RIGHT = ((0,-1), (0,1), (-1,0), (1,0))
@@ -138,11 +141,26 @@ class Snake:
     # QR loogika, peab tagastama ühe võimalustest [UP, DOWN, LEFT, RIGHT]
     def qrMove(self):
 
-        return self.randomMove()
+        # Burst read 10 frame
+        frames = []
+        for _ in range(10):
+            frames.append(qr.readFrame())
+        # Read tilt of qr code from frames. Interpret tilt as direction change. NB! Reading frames from last to first and
+        # breaking from the loop when significant tilt is detected
+        directions = (UP, RIGHT, DOWN, LEFT)    # directions in clockwise order
+        for frame in reversed(frames):
+            corners = qr.getQRCodeCoordinates(frame)
+            if len(corners) > 0:
+                tilt = qr.calculateTilt(corners[0], corners[1])
+                if abs(tilt) > TILT_SENSITIVITY:
+                    return directions[int((directions.index(self.lastDirection) - tilt//abs(tilt)) % len(directions))]
+
+        return self.lastDirection
 
     # Moves the snake based on its moveDecider
     def move(self):
         direction = self.moveDecider()
+        self.lastDirection = direction
         head = self.position[-1]
 
         # Direction coordinates get added to head.

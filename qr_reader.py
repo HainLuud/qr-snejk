@@ -18,7 +18,7 @@ def getQRCodeCoordinates(img):
     if is_qr_shown:
         return processedCoords(raw_coords)
     else:
-        return None
+        return []
 
 # Given raw coordinates like [[[x1, y1]], [[x2, y2]], ..., [[xn yn]]] returns coordinates like [(x0,y0),(x1,y1),(x2,y2), ..., (xn,yn)]
 def processedCoords(raw_coordinates):
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     while 1:
         frame = readFrame()
         coords = getQRCodeCoordinates(frame)
-        if coords is not None:
+        if len(coords) > 0:
             drawROI(frame, coords)
             printSignificantTilt(calculateTilt(coords[0], coords[1]))
 
