@@ -102,7 +102,7 @@ def __testQRDetectionPerformance():
 
 
 if __name__ == '__main__':
-    #t __testFPS()
+    #__testFPS()
     #__testQRDetectionPerformance()
     while 1:
         frame = readFrame()
