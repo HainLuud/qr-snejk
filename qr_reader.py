@@ -31,8 +31,8 @@ def getQRCodeCoordinates(img):
 # Given raw coordinates like [[[x1, y1]], [[x2, y2]], ..., [[xn yn]]] returns coordinates like [(x0,y0),(x1,y1),(x2,y2), ..., (xn,yn)]
 def processedCoords(raw_coordinates):
     processed = []
-    for i in range(len(raw_coordinates)):
-        coord = (int(raw_coordinates[i][0][0]), int(raw_coordinates[i][0][1]))
+    for i in range(len(raw_coordinates[0])):
+        coord = (int(raw_coordinates[0][i][0]), int(raw_coordinates[0][i][1]))
         processed.append(coord)
     return processed
 
@@ -109,7 +109,9 @@ if __name__ == '__main__':
         coords = getQRCodeCoordinates(frame)
         if len(coords) > 0:
             drawROI(frame, coords)
-            printSignificantTilt(calculateTilt(coords[0], coords[1]))
+            print(coords)
+            if len(coords) > 1:
+                printSignificantTilt(calculateTilt(coords[0], coords[1]))
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
