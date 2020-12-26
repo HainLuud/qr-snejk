@@ -25,7 +25,7 @@ FOOD_LOC = None
 
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
-GAME_SPEED = 10
+GAME_SPEED = 1
 # Tilt sensitivity. When player tilts the QR code at {TILT_SENSITIVITY} degrees the
 # snake will change direction (according to the direction of the tilt).
 TILT_SENSITIVITY = 10
@@ -140,22 +140,13 @@ class Snake:
     
     # QR loogika, peab tagastama ühe võimalustest [UP, DOWN, LEFT, RIGHT]
     def qrMove(self):
-
-        # Burst read 10 frame
-        frames = []
-        for _ in range(10):
-            frames.append(qr.readFrame())
-        # Read tilt of qr code from frames. Interpret tilt as direction change. NB! Reading frames from last to first and
-        # breaking from the loop when significant tilt is detected
-        directions = (UP, RIGHT, DOWN, LEFT)    # directions in clockwise order
-        for frame in reversed(frames):
-            corners = qr.getQRCodeCoordinates(frame)
-            if len(corners) > 0:
-                tilt = qr.calculateTilt(corners[0], corners[1])
-                if abs(tilt) > TILT_SENSITIVITY:
-                    return directions[int((directions.index(self.lastDirection) - tilt//abs(tilt)) % len(directions))]
-
+        tilt = qr.getMostSignificantTilt()
+        qr.resetMostSignificantTilt()
+        if abs(tilt) > TILT_SENSITIVITY:
+            directions = (UP, RIGHT, DOWN, LEFT)  # directions in clockwise order
+            return directions[int((directions.index(self.lastDirection) - tilt // abs(tilt)) % len(directions))]
         return self.lastDirection
+
 
     # Moves the snake based on its moveDecider
     def move(self):
@@ -191,6 +182,7 @@ SNAKES = []
 def main():
     global SCREEN, CLOCK, FOOD_LOC, SNAKES
     pygame.init()
+    qr.init()
     SCREEN = pygame.display.set_mode((WINDOW_HEIGHT, WINDOW_WIDTH))
     pygame.display.set_caption('QR-Snek')
 
