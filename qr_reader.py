@@ -57,11 +57,9 @@ def __drawROI(img, coords):
 def __calculateTilt(top_left_corner, top_right_corner):
     d_x = top_right_corner[0] - top_left_corner[0]
     d_y = top_right_corner[1] - top_left_corner[1]
-    try:
+    if (d_x != 0)
         angle = atan(d_y/d_x)    # Radians
         angle *= 180/pi          # Degrees
-    except ZeroDivisionError:
-        pass
     return angle
 
 
