@@ -3,7 +3,8 @@ import random
 import sys
 from Node import Node
 from functools import reduce
-import qr_reader as qr
+import numpy as np
+#import qr_reader as qr
 
 ###################### BOARD/WINDOW ######################
 # Colours
@@ -25,7 +26,7 @@ FOOD_LOC = None
 
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
-GAME_SPEED = 1
+GAME_SPEED = 300
 # Tilt sensitivity. When player tilts the QR code at {TILT_SENSITIVITY} degrees the
 # snake will change direction (according to the direction of the tilt).
 TILT_SENSITIVITY = 10
@@ -53,7 +54,7 @@ class Snake:
             self.moveDecider = self.aiMove
         elif moveDecider == "qr":
             self.moveDecider = self.qrMove
-        
+
     # All possible moves for snake, that, dont hit itself.
     def possibleMoves(self, startPos):
         moves = []
@@ -65,11 +66,6 @@ class Snake:
             new_x = (frm[0] + move[0]) % BOARD_WIDTH
             new_y = (frm[1] + move[1]) % BOARD_HEIGHT
 
-            """
-            # Väldib iseendale otsa sõitmist
-            if BOARD[new_y][new_x] != self.id:
-                moves.append(move)
-            """
             # Väldib endasse ja teise snek-i sisse sõitmist
             if (new_x, new_y) not in occupied:
                 moves.append(move)            
@@ -96,6 +92,7 @@ class Snake:
             if (neighbor == node and neighbor.f >= node.f):
                 return False
         return True
+
     # AI loogika, peab tagastama ühe võimalustest [UP, DOWN, LEFT, RIGHT]
     def aiMove(self):
         # Code influence from https://www.annytab.com/a-star-search-algorithm-in-python/
@@ -134,9 +131,7 @@ class Snake:
                     openNodes.append(neighbor)     
         
         # Return random move, if no path could be found
-        print("still picked random  ¯\_(ツ)_/¯")
         return self.randomMove()
-
     
     # QR loogika, peab tagastama ühe võimalustest [UP, DOWN, LEFT, RIGHT]
     def qrMove(self):
@@ -153,6 +148,7 @@ class Snake:
         direction = self.moveDecider()
         self.lastDirection = direction
         head = self.position[-1]
+        reward = -0.5
 
         # Direction coordinates get added to head.
         # % - if coordinate exceeds board size, start from other end
@@ -165,6 +161,7 @@ class Snake:
         if BOARD[new_y][new_x] == 0:
             tail = self.position[0]
             generateFood()
+            reward = 100
         else:
             tail = self.position.pop(0)
     	
@@ -174,15 +171,76 @@ class Snake:
         # Removes tail from board
         # TODO: Kui teine uss liigutab sama käigu ajal pea sellele kohale, siis läheb katki
         BOARD[tail[1]][tail[0]] = None
+        return BOARD, reward, gameOver(), direction
+
+def generateTrainData():
+    global SCREEN, CLOCK, FOOD_LOC, SNAKES
+    pygame.init()
+    SCREEN = pygame.display.set_mode((WINDOW_HEIGHT, WINDOW_WIDTH))
+    pygame.display.set_caption('QR-Snek')
+
+    CLOCK = pygame.time.Clock()
+    generateFood()
+    training_data = []
+    scores = []
+    goodGameScores = []
+    flg = True
+
+    # For 1000 games
+    for i in range(1000): 
+        print("Game", i, ". of 1000")
+        snek = Snake(3, [(1,11), (1,12), (1,13), (1,14), (1,15)], "random")
+        del SNAKES[:]
+        SNAKES.append(snek)
+
+        score = 100
+        # moves specifically from this environment:
+        gameMemory = []
+        # previous board that we saw
+        prevState = []
+
+        # for 300 steps each game
+        for j in range(300):
+            board, reward, gameOver, move = snek.move()
+            draw()
+            pygame.display.update()
+            CLOCK.tick(GAME_SPEED)
+
+            gameMemory.append([prevState, move])
+            prevState = board
+            score += reward
+            if gameOver: break
+
+        if score >= 100:
+            goodGameScores.append(score)
+            for data in gameMemory:
+                # convert move to one-hot (output for NN)
+                moveToOneHot = {UP:[0, 0, 0, 1], DOWN:[0, 0, 1, 0], LEFT:[0, 1, 0, 0], RIGHT:[1, 0, 0, 0] }
+                # saving our training data
+                training_data.append([data[0], moveToOneHot[data[1]]])
+
+        # save overall scores
+        scores.append(score)
+
+    # some stats here, to further illustrate the neural network magic!
+    from statistics import median, mean
+    print('Average accepted score:', mean(goodGameScores))
+    print('Median score for accepted scores:', median(goodGameScores))
+    #score_requirement = mean(goodGameScores)
+
+    # just in case you wanted to reference later
+    training_data_save = np.array(training_data)
+    np.save('saved.npy', training_data_save)
+
+    return training_data
 
 # All the snakes will be stored in array
 SNAKES = []
 
-
 def main():
     global SCREEN, CLOCK, FOOD_LOC, SNAKES
     pygame.init()
-    qr.init()
+    #qr.init()
     SCREEN = pygame.display.set_mode((WINDOW_HEIGHT, WINDOW_WIDTH))
     pygame.display.set_caption('QR-Snek')
 
@@ -193,7 +251,7 @@ def main():
     # AI
     SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "ai"))
     # QR
-    SNAKES.append(Snake(2, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
+    #SNAKES.append(Snake(2, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
 
     # Game loop
     draw()
@@ -206,8 +264,7 @@ def main():
             draw()
         else:
             drawGameEndPanel()
-
-        
+            break
         
         # Handle key presses
         for event in pygame.event.get():
@@ -288,4 +345,8 @@ def generateColor():
 # run the main function only if this module is executed as the main script
 # (if you import this as a module then nothing is executed)
 if __name__=="__main__":
-    main()
+    #main()
+    train_data = generateTrainData()
+
+    #f = np.load("saved.npy", allow_pickle=True)
+    #print(f)
