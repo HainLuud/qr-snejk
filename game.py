@@ -4,7 +4,7 @@ import sys
 from Node import Node
 from functools import reduce
 import numpy as np
-#import qr_reader as qr
+import qr_reader as qr
 
 ###################### BOARD/WINDOW ######################
 # Colours
@@ -184,7 +184,6 @@ def generateTrainData():
     training_data = []
     scores = []
     goodGameScores = []
-    flg = True
 
     # For 1000 games
     for i in range(1000): 
@@ -226,7 +225,6 @@ def generateTrainData():
     from statistics import median, mean
     print('Average accepted score:', mean(goodGameScores))
     print('Median score for accepted scores:', median(goodGameScores))
-    #score_requirement = mean(goodGameScores)
 
     # just in case you wanted to reference later
     training_data_save = np.array(training_data)
@@ -240,7 +238,7 @@ SNAKES = []
 def main():
     global SCREEN, CLOCK, FOOD_LOC, SNAKES
     pygame.init()
-    #qr.init()
+    qr.init()
     SCREEN = pygame.display.set_mode((WINDOW_HEIGHT, WINDOW_WIDTH))
     pygame.display.set_caption('QR-Snek')
 
@@ -311,7 +309,6 @@ def drawGameEndPanel():
     label = myfont.render("GAME OVER!", 1, (0,0,0), (245,245,245))
     SCREEN.blit(label, (BOARD_WIDTH*BLOCK_SIZE//2 - 120, BOARD_HEIGHT*BLOCK_SIZE//2 - 20))
 
-
 def generateFood():
     global FOOD_LOC
     options = []
@@ -345,8 +342,8 @@ def generateColor():
 # run the main function only if this module is executed as the main script
 # (if you import this as a module then nothing is executed)
 if __name__=="__main__":
-    #main()
-    train_data = generateTrainData()
+    main()
+    #train_data = generateTrainData()
 
     #f = np.load("saved.npy", allow_pickle=True)
     #print(f)
