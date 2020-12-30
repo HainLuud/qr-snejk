@@ -171,7 +171,6 @@ class Snake:
         # Adds new head to board
         BOARD[new_head[1]][new_head[0]] = self.id
         # Removes tail from board
-        # TODO: Kui teine uss liigutab sama käigu ajal pea sellele kohale, siis läheb katki
         BOARD[tail[1]][tail[0]] = None
         return BOARD, reward, gameOver(), direction
 
