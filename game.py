@@ -5,6 +5,7 @@ from Node import Node
 from functools import reduce
 import numpy as np
 import qr_reader as qr
+from enum import Enum
 
 ###################### BOARD/WINDOW ######################
 # Colours
@@ -26,12 +27,13 @@ FOOD_LOC = None
 
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
-GAME_SPEED = 300
+GAME_SPEED = 50
 # Tilt sensitivity. When player tilts the QR code at {TILT_SENSITIVITY} degrees the
 # snake will change direction (according to the direction of the tilt).
 TILT_SENSITIVITY = 10
 ###################### SNAKE ######################
 # On the next move snakes head will be moved by (x, y)
+NUMBER_OF_SNAKES = None
 UP, DOWN, LEFT, RIGHT = ((0,-1), (0,1), (-1,0), (1,0))
 
 
@@ -173,6 +175,13 @@ class Snake:
         BOARD[tail[1]][tail[0]] = None
         return BOARD, reward, gameOver(), direction
 
+class GameState(Enum):
+    SELECT_NUMBER_OF_SNAKES = 1
+    SELECT_SNAKE_1 = 2
+    SELECT_SNAKE_2 = 3
+    RUNNING = 4
+    END_SCREEN = 5
+
 def generateTrainData():
     global SCREEN, CLOCK, FOOD_LOC, SNAKES
     pygame.init()
@@ -201,7 +210,7 @@ def generateTrainData():
         # for 300 steps each game
         for j in range(300):
             board, reward, gameOver, move = snek.move()
-            draw()
+            drawGame()
             pygame.display.update()
             CLOCK.tick(GAME_SPEED)
 
@@ -232,6 +241,17 @@ def generateTrainData():
 
     return training_data
 
+def handleKeyPress():
+    for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    return 1
+                elif event.key == pygame.K_2:
+                    return 2
+
 # All the snakes will be stored in array
 SNAKES = []
 
@@ -245,36 +265,63 @@ def main():
     CLOCK = pygame.time.Clock()
     generateFood()
 
-    # Usside loomine
-    # AI
-    SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "ai"))
-    # QR
-    #SNAKES.append(Snake(2, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
-
     # Game loop
-    draw()
+    GAME_STATE = GameState.SELECT_NUMBER_OF_SNAKES
     while True:
         
-        if not gameOver():
+        if GAME_STATE == GameState.SELECT_NUMBER_OF_SNAKES:
+            drawStartScreen()
+            key = handleKeyPress()
+            if key:
+                NUMBER_OF_SNAKES = key
+                GAME_STATE = GameState.SELECT_SNAKE_1
+
+        elif GAME_STATE == GameState.SELECT_SNAKE_1:
+            drawSelectSnakeScreen("first")
+            key = handleKeyPress()
+            if key:
+                snake_type = key
+                if key == 1:
+                    SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "ai"))
+                elif key == 2:
+                    SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "qr"))
+
+                if NUMBER_OF_SNAKES == 1:
+                    GAME_STATE = GameState.RUNNING
+                elif NUMBER_OF_SNAKES == 2:
+                    GAME_STATE = GameState.SELECT_SNAKE_2
+
+        elif GAME_STATE == GameState.SELECT_SNAKE_2:
+            drawSelectSnakeScreen("second")
+            key = handleKeyPress()
+            if key:
+                snake_type = key
+                if key == 1:
+                    SNAKES.append(Snake(1, [(5,5), (6,5), (7,5), (8,5), (9,5)], "ai"))
+                elif key == 2:
+                    SNAKES.append(Snake(1, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
+
+                GAME_STATE = GameState.RUNNING
+
+        elif GAME_STATE == GameState.RUNNING:
             # Move all snakes
             for snake in SNAKES:
                 snake.move()
-            draw()
-        else:
-            drawGameEndPanel()
-            break
+            drawGame()
+
+            handleKeyPress()
+            if gameOver():
+                GAME_STATE = GameState.END_SCREEN
         
-        # Handle key presses
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+        else:
+            drawEndScreen()
+            break
 
         pygame.display.update()
         CLOCK.tick(GAME_SPEED)
 
 # Draws window contents
-def draw():
+def drawGame():
     #### Grid
     SCREEN.fill(TILE_COLOR)
 
@@ -304,7 +351,31 @@ def draw():
                                 BLOCK_SIZE, BLOCK_SIZE)
     pygame.draw.rect(SCREEN, FOOD_COLOR, rect)
 
-def drawGameEndPanel():
+def drawStartScreen():
+    SCREEN.fill(TILE_COLOR)
+    myfont = pygame.font.SysFont("monospace", 18)
+    label1 = myfont.render("Pick the game format by pressing", 1, (0,0,0), (245,245,245))
+    label2 = myfont.render("on the number:", 1, (0,0,0), (245,245,245))
+    SCREEN.blit(label1, (0, 0))
+    SCREEN.blit(label2, (0, 20))
+
+    label3 = myfont.render("1 - 1 snake", 1, (0,0,0), (245,245,245))
+    label4 = myfont.render("2 - 2 snakes", 1, (0,0,0), (245,245,245))
+    SCREEN.blit(label3, (0, 60))
+    SCREEN.blit(label4, (0, 80))
+
+def drawSelectSnakeScreen(snake_nr):
+    SCREEN.fill(TILE_COLOR)
+    myfont = pygame.font.SysFont("monospace", 18)
+    label1 = myfont.render("Pick {} snake".format(snake_nr), 1, (0,0,0), (245,245,245))
+    SCREEN.blit(label1, (0, 0))
+
+    label3 = myfont.render("1 - 1 A*", 1, (0,0,0), (245,245,245))
+    label4 = myfont.render("2 - 2 QR reader", 1, (0,0,0), (245,245,245))
+    SCREEN.blit(label3, (0, 40))
+    SCREEN.blit(label4, (0, 60))
+
+def drawEndScreen():
     myfont = pygame.font.SysFont("monospace", 40)
     label = myfont.render("GAME OVER!", 1, (0,0,0), (245,245,245))
     SCREEN.blit(label, (BOARD_WIDTH*BLOCK_SIZE//2 - 120, BOARD_HEIGHT*BLOCK_SIZE//2 - 20))
