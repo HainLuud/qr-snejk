@@ -87,7 +87,7 @@ class Snake:
         node.f = node.g + node.h
         return node
 
-    def add_to_open(self, open, neighbor):
+    def openDoesntContain(self, open, neighbor):
         for node in open:
             if (neighbor == node and neighbor.f >= node.f):
                 return False
@@ -95,39 +95,44 @@ class Snake:
 
     # AI loogika, peab tagastama ühe võimalustest [UP, DOWN, LEFT, RIGHT]
     def aiMove(self):
-        # Code influence from https://www.annytab.com/a-star-search-algorithm-in-python/
+        # Influence from https://www.annytab.com/a-star-search-algorithm-in-python/
 
         openNodes = []
         closedNodes = []
 
-        startNode = Node(self.position[-1], None, None) # head location
-        endNode = Node(FOOD_LOC, None, None)
+        startNode = Node(self.position[-1], None, None) # head location node
+        endNode = Node(FOOD_LOC, None, None) # food location node
 
         openNodes.append(startNode)
         lastMove = None
         while len(openNodes) != 0:
-            # Use list as a priority queue
+            # Use list as a priority queue and retrieve the node with the lowest f-score
             openNodes.sort()
             currentNode = openNodes.pop(0)
             closedNodes.append(currentNode)
             
+            # If the selected node is where we wanted to go then 
             if currentNode == endNode:
+                # retrace our steps back to the initial step that led us here and return it
                 while currentNode != startNode:
                     prevNode = currentNode
                     currentNode = currentNode.parent
                 return prevNode.moveMade
             
+            # Else, go through all possible moves the snake could make from the node
             for move in self.possibleMoves(currentNode.position):
+                # calculate what the g, h and f scores of that move would be
                 new_x = (currentNode.position[0] + move[0]) % BOARD_WIDTH
                 new_y = (currentNode.position[1] + move[1]) % BOARD_HEIGHT
                 neighbor = Node((new_x, new_y), currentNode, move)
-            
+
                 if neighbor in closedNodes:
                     continue
                 
                 neighbor =  self.setNodeDistances(neighbor, startNode, endNode)
 
-                if (self.add_to_open(openNodes, neighbor)):
+                # and if it isn't already in our list of places to look at, then add it 
+                if (self.openDoesntContain(openNodes, neighbor)):
                     openNodes.append(neighbor)     
         
         # Return random move, if no path could be found
