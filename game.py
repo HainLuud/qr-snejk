@@ -27,7 +27,7 @@ FOOD_LOC = None
 
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
-GAME_SPEED = 50
+GAME_SPEED = 3
 # Tilt sensitivity. When player tilts the QR code at {TILT_SENSITIVITY} degrees the
 # snake will change direction (according to the direction of the tilt).
 TILT_SENSITIVITY = 10
@@ -144,6 +144,7 @@ class Snake:
     def qrMove(self):
         tilt = qr.getMostSignificantTilt()
         qr.resetMostSignificantTilt()
+        print(tilt)
         if abs(tilt) > TILT_SENSITIVITY:
             directions = (UP, RIGHT, DOWN, LEFT)  # directions in clockwise order
             return directions[int((directions.index(self.lastDirection) - tilt // abs(tilt)) % len(directions))]
