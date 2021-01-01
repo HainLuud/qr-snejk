@@ -328,7 +328,6 @@ def main():
         
         else:
             drawEndScreen()
-            break
 
         pygame.display.update()
         CLOCK.tick(GAME_SPEED)
