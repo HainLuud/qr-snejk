@@ -181,6 +181,7 @@ class Snake:
         return BOARD, reward, gameOver(), direction
 
 class GameState(Enum):
+    CALIBRATION = 0
     SELECT_NUMBER_OF_SNAKES = 1
     SELECT_SNAKE_1 = 2
     SELECT_SNAKE_2 = 3
@@ -256,6 +257,8 @@ def handleKeyPress():
                     return 1
                 elif event.key == pygame.K_2:
                     return 2
+                elif event.key == pygame.K_RETURN:
+                    return 3
 
 # All the snakes will be stored in array
 SNAKES = []
@@ -271,10 +274,15 @@ def main():
     generateFood()
 
     # Game loop
-    GAME_STATE = GameState.SELECT_NUMBER_OF_SNAKES
+    GAME_STATE = GameState.CALIBRATION
     while True:
-        
-        if GAME_STATE == GameState.SELECT_NUMBER_OF_SNAKES:
+        if GAME_STATE == GameState.CALIBRATION:
+            drawCalbrationScreen()
+            key = handleKeyPress()
+            if key:
+                GAME_STATE = GameState.SELECT_NUMBER_OF_SNAKES
+
+        elif GAME_STATE == GameState.SELECT_NUMBER_OF_SNAKES:
             drawStartScreen()
             key = handleKeyPress()
             if key:
@@ -355,6 +363,24 @@ def drawGame():
     rect = pygame.Rect(FOOD_LOC[0]*BLOCK_SIZE, FOOD_LOC[1]*BLOCK_SIZE,
                                 BLOCK_SIZE, BLOCK_SIZE)
     pygame.draw.rect(SCREEN, FOOD_COLOR, rect)
+
+
+def drawCalbrationScreen():
+    SCREEN.fill(TILE_COLOR)
+    myfont = pygame.font.SysFont("monospace", 12)
+    label1 = myfont.render("QR detector calibration.", 1, (0,0,0), (245,245,245))
+    label2 = myfont.render("Camera works best with QR code printed on paper.", 1, (0,0,0), (245,245,245))
+    label3_1 = myfont.render("If you choose to use a secondary screen to show QR code", 1, (0,0,0), (245, 245, 245))
+    label3_2 = myfont.render("to camera then adjust your screen's brightness so that", 1, (0,0,0), (245,245,245))
+    label3_3 = myfont.render("the camera can detect the QR code better.", 1, (0,0,0), (245,245,245))
+    label4 = myfont.render("When done calibrating press ENTER to continue.", 1, (0, 0, 0), (245, 245, 245))
+    SCREEN.blit(label1, (0, 0))
+    SCREEN.blit(label2, (0, 30))
+    SCREEN.blit(label3_1, (0, 60))
+    SCREEN.blit(label3_2, (0, 80))
+    SCREEN.blit(label3_3, (0, 100))
+    SCREEN.blit(label4, (0, 130))
+
 
 def drawStartScreen():
     SCREEN.fill(TILE_COLOR)
