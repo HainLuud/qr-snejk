@@ -351,7 +351,7 @@ def main():
                     sys.exit()
                 elif response == "Resume":
                     generateFood()
-                    GAME_STATE = GameState.CALIBRATION
+                    GAME_STATE = GameState.SELECT_NUMBER_OF_SNAKES
                     SNAKES = []
                     break
 
