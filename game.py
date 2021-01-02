@@ -189,7 +189,7 @@ class GameState(Enum):
     SELECT_SNAKE_2 = 3
     RUNNING = 4
     END_SCREEN = 5
-    
+
 
 def generateTrainData():
     global SCREEN, CLOCK, FOOD_LOC, SNAKES
