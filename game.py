@@ -345,6 +345,7 @@ def main():
                 response = handleKeyPress("End")
                 if response == "Quit":
                     pygame.quit()
+                    qr.deinit()
                     sys.exit()
                 elif response == "Resume":
                     generateFood()

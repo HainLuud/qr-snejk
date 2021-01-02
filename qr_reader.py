@@ -10,10 +10,7 @@ WINDOW_NAME = "Camera view"
 # Global variables
 CURRENT_TILT = 0            # degrees
 MOST_SIGNIFICANT_TILT = 0   # degrees
-
-# Initialises user's camera and fetches QRCodeDetector class from cv2.
-cam = cv2.VideoCapture(0)
-qr_detector = cv2.QRCodeDetector()
+KEEP_THREADS_ALIVE = False
 
 
 #######################
@@ -24,7 +21,7 @@ qr_detector = cv2.QRCodeDetector()
 
 
 # Reads frame from user's camera. Returns that frame (RGB).
-def __readFrame():
+def __readFrame(cam):
     _, frame = cam.read()
     return frame
 
@@ -32,14 +29,18 @@ def __readFrame():
 # Find QR code coordinates from image.
 # If there is NOT a QR code in image return None
 # If there IS a QR code in image return coordinates of its corners like [(x0,y0),(x1,y1),(x2,y2),(x3,y3)]
-def __getQRCodeCoordinates(img):
+def __getQRCodeCoordinates(qr_detector, img):
     try:
         is_qr_shown, raw_coords = qr_detector.detect(img)
         if is_qr_shown:
             coords = __processedCoords(raw_coords)
             return coords
     except cv2.error:
-        print("DEBUG: cv2.error")
+        #print("DEBUG: cv2.error")
+        pass
+    except OverflowError:
+        #print("DEBUG: overflow error")
+        pass
     return []
 
 
@@ -88,23 +89,25 @@ def printSignificantTilt(tilt, threshold=10):
 
 # Function continuously reads camera for frames and updates CURRENT_TILT and
 # MOST_SIGNIFICANT_TILT based on the tilt of the QR code shown to the camera.
-def __processVideoStreamThread(self):
+def __processVideoStreamThread(camera, qr_detector):
     global CURRENT_TILT, MOST_SIGNIFICANT_TILT
     while 1:
-        frame = __readFrame()
-        coords = __getQRCodeCoordinates(frame)
+        frame = __readFrame(camera)
+        coords = __getQRCodeCoordinates(qr_detector, frame)
         if len(coords) > 1:
             __drawROI(frame, coords)
             CURRENT_TILT = __calculateTilt(coords[0], coords[1])
             if abs(CURRENT_TILT) > abs(MOST_SIGNIFICANT_TILT):
                 MOST_SIGNIFICANT_TILT = CURRENT_TILT
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
+        if not KEEP_THREADS_ALIVE:
             break
+
+        cv2.waitKey(1)
         cv2.imshow(WINDOW_NAME, frame)
 
-    cam.release()
     cv2.destroyAllWindows()
+    camera.release()
 
 #######################
 #                     #
@@ -134,6 +137,14 @@ def resetMostSignificantTilt():
 # and calculates the tilt of that QR code. Results of these calculations are stored
 # in global variables CURRENT_TILT and MOST_SIGNIFICANT_TILT.
 def init():
-    video_processing_thread = threading.Thread(target=__processVideoStreamThread, args=(1,))
+    global KEEP_THREADS_ALIVE
+    KEEP_THREADS_ALIVE = True
+    video_processing_thread = threading.Thread(target=__processVideoStreamThread, args=(cv2.VideoCapture(0), cv2.QRCodeDetector(),))
     video_processing_thread.start()
+
+
+# Function that stops video processing thread
+def deinit():
+    global KEEP_THREADS_ALIVE
+    KEEP_THREADS_ALIVE = False
 
