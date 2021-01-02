@@ -30,8 +30,8 @@ def __readFrame():
 
 
 # Find QR code coordinates from image.
-# If there is NOT a QR code in image returns None
-# If there IS a QR code in image returns coordinates of its corners like [(x0,y0),(x1,y1),(x2,y2),(x3,y3)]
+# If there is NOT a QR code in image return None
+# If there IS a QR code in image return coordinates of its corners like [(x0,y0),(x1,y1),(x2,y2),(x3,y3)]
 def __getQRCodeCoordinates(img):
     try:
         is_qr_shown, raw_coords = qr_detector.detect(img)
@@ -43,7 +43,8 @@ def __getQRCodeCoordinates(img):
     return []
 
 
-# Given raw coordinates like [[[x1, y1]], [[x2, y2]], ..., [[xn yn]]] returns coordinates like [(x0,y0),(x1,y1),(x2,y2), ..., (xn,yn)]
+# Given raw coordinates like [[[x1, y1]], [[x2, y2]], ..., [[xn yn]]] return
+# "clean" coordinates like [(x0,y0),(x1,y1),(x2,y2), ..., (xn,yn)]
 def __processedCoords(raw_coordinates):
     processed = []
     for i in range(len(raw_coordinates[0])):
@@ -52,7 +53,7 @@ def __processedCoords(raw_coordinates):
     return processed
 
 
-# Draws a closed polygon on image based on coords.
+# Draws a closed polygon (a region of interest) on image based on coordinates.
 def __drawROI(img, coords):
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255)]
     for i in range(len(coords)-1):
@@ -63,7 +64,7 @@ def __drawROI(img, coords):
 
 # Calculates tilt of QR code based on the top side.
 # This is achieved by viewing the top side of the QR code as an (d_x, d_y) vector and
-# finding the angle between it and a horizontal line (x axis) with inverse tangent.
+# finding the angle between it and a horizontal line (x axis) using inverse tangent.
 def __calculateTilt(top_left_corner, top_right_corner):
     d_x = top_right_corner[0] - top_left_corner[0]
     d_y = top_right_corner[1] - top_left_corner[1]
@@ -111,13 +112,13 @@ def __processVideoStreamThread(self):
 #                     #
 #######################
 
-# Returns the tilt angle of QR code that was last seen.
+# Returns the tilt angle of QR code that was last seen during video processing.
 def getCurrentTilt():
     return CURRENT_TILT
 
 
-# Returns the highest absolute tilt angle of QR code that
-# was seen during video processing.
+# Returns the highest absolute tilt angle of QR code that was seen
+# during video processing.
 def getMostSignificantTilt():
     return MOST_SIGNIFICANT_TILT
 
