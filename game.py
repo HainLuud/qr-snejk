@@ -25,6 +25,8 @@ BOARD = [[None for x in range(BOARD_WIDTH)] for y in range(BOARD_HEIGHT)]
 
 FOOD_LOC = None
 
+SNAKE_START_LENGTH = 6
+
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
 GAME_SPEED = 3
@@ -41,6 +43,7 @@ UP, DOWN, LEFT, RIGHT = ((0,-1), (0,1), (-1,0), (1,0))
 class Snake:
     def __init__(self, id, position, moveDecider = "random"):
         self.id = id
+        self.name = moveDecider
         self.head_color, self.body_color = generateColor()
          
         self.lastDirection = (position[-1][0]-position[-2][0], position[-1][1]-position[-2][1])
@@ -144,7 +147,6 @@ class Snake:
     def qrMove(self):
         tilt = qr.getMostSignificantTilt()
         qr.resetMostSignificantTilt()
-        print(tilt)
         if abs(tilt) > TILT_SENSITIVITY:
             directions = (UP, RIGHT, DOWN, LEFT)  # directions in clockwise order
             return directions[int((directions.index(self.lastDirection) - tilt // abs(tilt)) % len(directions))]
@@ -181,11 +183,13 @@ class Snake:
         return BOARD, reward, gameOver(), direction
 
 class GameState(Enum):
+    CALIBRATION = 0
     SELECT_NUMBER_OF_SNAKES = 1
     SELECT_SNAKE_1 = 2
     SELECT_SNAKE_2 = 3
     RUNNING = 4
     END_SCREEN = 5
+    
 
 def generateTrainData():
     global SCREEN, CLOCK, FOOD_LOC, SNAKES
@@ -246,7 +250,15 @@ def generateTrainData():
 
     return training_data
 
-def handleKeyPress():
+def handleKeyPress(gameState=None):
+    if gameState != None:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_q:
+                    return "Quit"
+                elif event.key == pygame.K_r:
+                    return "Resume"
+
     for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -256,6 +268,8 @@ def handleKeyPress():
                     return 1
                 elif event.key == pygame.K_2:
                     return 2
+                elif event.key == pygame.K_RETURN:
+                    return 3
 
 # All the snakes will be stored in array
 SNAKES = []
@@ -271,10 +285,15 @@ def main():
     generateFood()
 
     # Game loop
-    GAME_STATE = GameState.SELECT_NUMBER_OF_SNAKES
+    GAME_STATE = GameState.CALIBRATION
     while True:
-        
-        if GAME_STATE == GameState.SELECT_NUMBER_OF_SNAKES:
+        if GAME_STATE == GameState.CALIBRATION:
+            drawCalbrationScreen()
+            key = handleKeyPress()
+            if key:
+                GAME_STATE = GameState.SELECT_NUMBER_OF_SNAKES
+
+        elif GAME_STATE == GameState.SELECT_NUMBER_OF_SNAKES:
             drawStartScreen()
             key = handleKeyPress()
             if key:
@@ -287,9 +306,9 @@ def main():
             if key:
                 snake_type = key
                 if key == 1:
-                    SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "ai"))
+                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "ai")) #[(1,1), (2,1), (3,1), (4,1), (5,1)], "ai"))
                 elif key == 2:
-                    SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "qr"))
+                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "qr")) #[(1,1), (2,1), (3,1), (4,1), (5,1)], "qr"))
 
                 if NUMBER_OF_SNAKES == 1:
                     GAME_STATE = GameState.RUNNING
@@ -302,9 +321,9 @@ def main():
             if key:
                 snake_type = key
                 if key == 1:
-                    SNAKES.append(Snake(1, [(5,5), (6,5), (7,5), (8,5), (9,5)], "ai"))
+                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "ai"))
                 elif key == 2:
-                    SNAKES.append(Snake(1, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
+                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "qr"))
 
                 GAME_STATE = GameState.RUNNING
 
@@ -320,7 +339,19 @@ def main():
         
         else:
             drawEndScreen()
-            break
+            while (True):
+                pygame.display.update()
+                CLOCK.tick(GAME_SPEED)
+                response = handleKeyPress("End")
+                if response == "Quit":
+                    pygame.quit()
+                    sys.exit()
+                elif response == "Resume":
+                    generateFood()
+                    GAME_STATE = GameState.CALIBRATION
+                    SNAKES = []
+                    break
+
 
         pygame.display.update()
         CLOCK.tick(GAME_SPEED)
@@ -356,6 +387,24 @@ def drawGame():
                                 BLOCK_SIZE, BLOCK_SIZE)
     pygame.draw.rect(SCREEN, FOOD_COLOR, rect)
 
+
+def drawCalbrationScreen():
+    SCREEN.fill(TILE_COLOR)
+    myfont = pygame.font.SysFont("monospace", 12)
+    label1 = myfont.render("QR detector calibration.", 1, (0,0,0), (245,245,245))
+    label2 = myfont.render("Camera works best with QR code printed on paper.", 1, (0,0,0), (245,245,245))
+    label3_1 = myfont.render("If you choose to use a secondary screen to show QR code", 1, (0,0,0), (245, 245, 245))
+    label3_2 = myfont.render("to camera then adjust your screen's brightness so that", 1, (0,0,0), (245,245,245))
+    label3_3 = myfont.render("the camera can detect the QR code better.", 1, (0,0,0), (245,245,245))
+    label4 = myfont.render("When done calibrating press ENTER to continue.", 1, (0, 0, 0), (245, 245, 245))
+    SCREEN.blit(label1, (0, 0))
+    SCREEN.blit(label2, (0, 30))
+    SCREEN.blit(label3_1, (0, 60))
+    SCREEN.blit(label3_2, (0, 80))
+    SCREEN.blit(label3_3, (0, 100))
+    SCREEN.blit(label4, (0, 130))
+
+
 def drawStartScreen():
     SCREEN.fill(TILE_COLOR)
     myfont = pygame.font.SysFont("monospace", 18)
@@ -382,8 +431,17 @@ def drawSelectSnakeScreen(snake_nr):
 
 def drawEndScreen():
     myfont = pygame.font.SysFont("monospace", 40)
-    label = myfont.render("GAME OVER!", 1, (0,0,0), (245,245,245))
-    SCREEN.blit(label, (BOARD_WIDTH*BLOCK_SIZE//2 - 120, BOARD_HEIGHT*BLOCK_SIZE//2 - 20))
+    label1 = myfont.render("GAME OVER!", 1, (0,0,0), (245,245,245))
+    myfont = pygame.font.SysFont("monospace", 20)
+    label2 = myfont.render("Press r to restart or q to quit", 1, (0,0,0), (245,245,245))
+    SCREEN.blit(label1, (BOARD_WIDTH*BLOCK_SIZE//2 - 120, BOARD_HEIGHT*BLOCK_SIZE//2 - 20))
+    SCREEN.blit(label2, (BOARD_WIDTH*BLOCK_SIZE//2 - 180, BOARD_HEIGHT*BLOCK_SIZE//2 + 40))
+
+    for snake in SNAKES:
+        if snake.name == "qr":
+            label3 = myfont.render("Your score: " + str(len(snake.position)-SNAKE_START_LENGTH), 1, (0,0,0), (245,245,245))
+            SCREEN.blit(label3, (BOARD_WIDTH * BLOCK_SIZE // 2 - 120, BOARD_HEIGHT * BLOCK_SIZE // 2 + 80))
+
 
 def generateFood():
     global FOOD_LOC
