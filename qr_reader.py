@@ -99,10 +99,8 @@ def __processVideoStreamThread(camera, qr_detector):
             CURRENT_TILT = __calculateTilt(coords[0], coords[1])
             if abs(CURRENT_TILT) > abs(MOST_SIGNIFICANT_TILT):
                 MOST_SIGNIFICANT_TILT = CURRENT_TILT
-
         if not KEEP_THREADS_ALIVE:
             break
-
         cv2.waitKey(1)
         cv2.imshow(WINDOW_NAME, frame)
 

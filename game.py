@@ -275,7 +275,7 @@ def handleKeyPress(gameState=None):
 SNAKES = []
 
 def main():
-    global SCREEN, CLOCK, FOOD_LOC, SNAKES
+    global SCREEN, CLOCK, FOOD_LOC, SNAKES, BOARD
     pygame.init()
     qr.init()
     SCREEN = pygame.display.set_mode((WINDOW_HEIGHT, WINDOW_WIDTH))
@@ -338,8 +338,10 @@ def main():
                 GAME_STATE = GameState.END_SCREEN
         
         else:
+            BOARD = [[None for x in range(BOARD_WIDTH)] for y in range(BOARD_HEIGHT)]
+            drawGame()
             drawEndScreen()
-            while (True):
+            while True:
                 pygame.display.update()
                 CLOCK.tick(GAME_SPEED)
                 response = handleKeyPress("End")
