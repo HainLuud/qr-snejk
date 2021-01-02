@@ -25,6 +25,8 @@ BOARD = [[None for x in range(BOARD_WIDTH)] for y in range(BOARD_HEIGHT)]
 
 FOOD_LOC = None
 
+SNAKE_START_LENGTH = 6
+
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
 GAME_SPEED = 3
@@ -41,6 +43,7 @@ UP, DOWN, LEFT, RIGHT = ((0,-1), (0,1), (-1,0), (1,0))
 class Snake:
     def __init__(self, id, position, moveDecider = "random"):
         self.id = id
+        self.name = moveDecider
         self.head_color, self.body_color = generateColor()
          
         self.lastDirection = (position[-1][0]-position[-2][0], position[-1][1]-position[-2][1])
@@ -144,7 +147,6 @@ class Snake:
     def qrMove(self):
         tilt = qr.getMostSignificantTilt()
         qr.resetMostSignificantTilt()
-        print(tilt)
         if abs(tilt) > TILT_SENSITIVITY:
             directions = (UP, RIGHT, DOWN, LEFT)  # directions in clockwise order
             return directions[int((directions.index(self.lastDirection) - tilt // abs(tilt)) % len(directions))]
@@ -187,6 +189,7 @@ class GameState(Enum):
     SELECT_SNAKE_2 = 3
     RUNNING = 4
     END_SCREEN = 5
+    
 
 def generateTrainData():
     global SCREEN, CLOCK, FOOD_LOC, SNAKES
@@ -295,9 +298,9 @@ def main():
             if key:
                 snake_type = key
                 if key == 1:
-                    SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "ai"))
+                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "ai")) #[(1,1), (2,1), (3,1), (4,1), (5,1)], "ai"))
                 elif key == 2:
-                    SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "qr"))
+                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "qr")) #[(1,1), (2,1), (3,1), (4,1), (5,1)], "qr"))
 
                 if NUMBER_OF_SNAKES == 1:
                     GAME_STATE = GameState.RUNNING
@@ -310,9 +313,9 @@ def main():
             if key:
                 snake_type = key
                 if key == 1:
-                    SNAKES.append(Snake(1, [(5,5), (6,5), (7,5), (8,5), (9,5)], "ai"))
+                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "ai"))
                 elif key == 2:
-                    SNAKES.append(Snake(1, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
+                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "qr"))
 
                 GAME_STATE = GameState.RUNNING
 
@@ -407,8 +410,15 @@ def drawSelectSnakeScreen(snake_nr):
 
 def drawEndScreen():
     myfont = pygame.font.SysFont("monospace", 40)
-    label = myfont.render("GAME OVER!", 1, (0,0,0), (245,245,245))
-    SCREEN.blit(label, (BOARD_WIDTH*BLOCK_SIZE//2 - 120, BOARD_HEIGHT*BLOCK_SIZE//2 - 20))
+    label1 = myfont.render("GAME OVER!", 1, (0,0,0), (245,245,245))
+    SCREEN.blit(label1, (BOARD_WIDTH*BLOCK_SIZE//2 - 120, BOARD_HEIGHT*BLOCK_SIZE//2 - 20))
+
+    for snake in SNAKES:
+        if snake.name == "qr":
+            myfont = pygame.font.SysFont("monospace", 20)
+            label2 = myfont.render("Your score: " + str(len(snake.position)-SNAKE_START_LENGTH), 1, (0,0,0), (245,245,245))
+            SCREEN.blit(label2, (BOARD_WIDTH * BLOCK_SIZE // 2 - 120, BOARD_HEIGHT * BLOCK_SIZE // 2 + 30))
+
 
 def generateFood():
     global FOOD_LOC

@@ -37,7 +37,6 @@ def __getQRCodeCoordinates(img):
         is_qr_shown, raw_coords = qr_detector.detect(img)
         if is_qr_shown:
             coords = __processedCoords(raw_coords)
-            #if checkCoords(coords):
             return coords
     except cv2.error:
         print("DEBUG: cv2.error")
