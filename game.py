@@ -338,8 +338,6 @@ def main():
                 GAME_STATE = GameState.END_SCREEN
         
         else:
-            BOARD = [[None for x in range(BOARD_WIDTH)] for y in range(BOARD_HEIGHT)]
-            drawGame()
             drawEndScreen()
             while True:
                 pygame.display.update()
@@ -350,9 +348,11 @@ def main():
                     qr.deinit()
                     sys.exit()
                 elif response == "Resume":
-                    generateFood()
                     GAME_STATE = GameState.SELECT_NUMBER_OF_SNAKES
+                    generateFood()
                     SNAKES = []
+                    BOARD = [[None for x in range(BOARD_WIDTH)] for y in range(BOARD_HEIGHT)]
+                    drawGame()
                     break
 
 
