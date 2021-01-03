@@ -25,11 +25,11 @@ BOARD = [[None for x in range(BOARD_WIDTH)] for y in range(BOARD_HEIGHT)]
 
 FOOD_LOC = None
 
-SNAKE_START_LENGTH = 6
+SNAKE_START_LENGTH = 5
 
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
-GAME_SPEED = 3
+GAME_SPEED = 20
 # Tilt sensitivity. When player tilts the QR code at {TILT_SENSITIVITY} degrees the
 # snake will change direction (according to the direction of the tilt).
 TILT_SENSITIVITY = 10
@@ -321,9 +321,9 @@ def main():
             if key:
                 snake_type = key
                 if key == 1:
-                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "ai"))
+                    SNAKES.append(Snake(1, [(x, BOARD_HEIGHT-2) for x in range(1, SNAKE_START_LENGTH+1)], "ai"))
                 elif key == 2:
-                    SNAKES.append(Snake(1, [(x, 1) for x in range(1, SNAKE_START_LENGTH+1)], "qr"))
+                    SNAKES.append(Snake(1, [(x, BOARD_HEIGHT-2) for x in range(1, SNAKE_START_LENGTH+1)], "qr"))
 
                 GAME_STATE = GameState.RUNNING
 
@@ -352,7 +352,6 @@ def main():
                     generateFood()
                     SNAKES = []
                     BOARD = [[None for x in range(BOARD_WIDTH)] for y in range(BOARD_HEIGHT)]
-                    drawGame()
                     break
 
 
@@ -433,17 +432,18 @@ def drawSelectSnakeScreen(snake_nr):
     SCREEN.blit(label4, (0, 60))
 
 def drawEndScreen():
-    myfont = pygame.font.SysFont("monospace", 40)
+    myfont = pygame.font.SysFont("monospace", 45)
     label1 = myfont.render("GAME OVER!", 1, (0,0,0), (245,245,245))
     myfont = pygame.font.SysFont("monospace", 20)
-    label2 = myfont.render("Press r to restart or q to quit", 1, (0,0,0), (245,245,245))
-    SCREEN.blit(label1, (BOARD_WIDTH*BLOCK_SIZE//2 - 120, BOARD_HEIGHT*BLOCK_SIZE//2 - 20))
-    SCREEN.blit(label2, (BOARD_WIDTH*BLOCK_SIZE//2 - 180, BOARD_HEIGHT*BLOCK_SIZE//2 + 40))
-
+    label2 = myfont.render("\"r\"-RESTART", 1, (0,0,0), (245,245,245))
+    label3 = myfont.render("\"q\"-QUIT", 1, (0,0,0), (245,245,245))
+    SCREEN.blit(label1, (BOARD_WIDTH*BLOCK_SIZE//2 - 130, BOARD_HEIGHT*BLOCK_SIZE//2 - 40))
+    SCREEN.blit(label2, (BOARD_WIDTH*BLOCK_SIZE//2, BOARD_HEIGHT*BLOCK_SIZE//2 + 40))
+    SCREEN.blit(label3, (BOARD_WIDTH*BLOCK_SIZE//2, BOARD_HEIGHT*BLOCK_SIZE//2 + 60))
     for snake in SNAKES:
         if snake.name == "qr":
-            label3 = myfont.render("Your score: " + str(len(snake.position)-SNAKE_START_LENGTH), 1, (0,0,0), (245,245,245))
-            SCREEN.blit(label3, (BOARD_WIDTH * BLOCK_SIZE // 2 - 120, BOARD_HEIGHT * BLOCK_SIZE // 2 + 80))
+            label4 = myfont.render("Score: " + str(len(snake.position)-SNAKE_START_LENGTH), 1, (0,0,0), (245,245,245))
+            SCREEN.blit(label4, (BOARD_WIDTH * BLOCK_SIZE // 2 - 120, BOARD_HEIGHT * BLOCK_SIZE // 2 + 40))
 
 
 def generateFood():
