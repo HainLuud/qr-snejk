@@ -29,7 +29,7 @@ SNAKE_START_LENGTH = 5
 
 ###################### GAME SETTINGS ######################
 # Game will advance by {GAME_SPEED} frames per second
-GAME_SPEED = 20
+GAME_SPEED = 3
 # Tilt sensitivity. When player tilts the QR code at {TILT_SENSITIVITY} degrees the
 # snake will change direction (according to the direction of the tilt).
 TILT_SENSITIVITY = 10
@@ -122,7 +122,10 @@ class Snake:
                 while currentNode != startNode:
                     prevNode = currentNode
                     currentNode = currentNode.parent
-                return prevNode.moveMade
+                try:
+                    return prevNode.moveMade
+                except UnboundLocalError:
+                    return self.randomMove()
             
             # Else, go through all possible moves the snake could make from the node
             for move in self.possibleMoves(currentNode.position):
@@ -162,8 +165,8 @@ class Snake:
 
         # Direction coordinates get added to head.
         # % - if coordinate exceeds board size, start from other end
-        new_x = (head[0] + direction[0]) % BOARD_WIDTH
-        new_y = (head[1] + direction[1]) % BOARD_HEIGHT
+        new_x = int((head[0] + direction[0]) % BOARD_WIDTH)
+        new_y = int((head[1] + direction[1]) % BOARD_HEIGHT)
         new_head = (new_x, new_y)
         self.position.append(new_head)
         
@@ -454,7 +457,7 @@ def generateFood():
             if BOARD[y][x] == None:
                 options.append((x,y))
     food_loc = random.choice(options)
-
+    print(food_loc)
     BOARD[food_loc[1]][food_loc[0]] = 0
 
     FOOD_LOC = food_loc
