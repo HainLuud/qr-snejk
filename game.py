@@ -7,6 +7,17 @@ import numpy as np
 import qr_reader as qr
 from enum import Enum
 
+#ANN imports
+# Keras
+from tensorflow import keras
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import load_model
+
+# Other
+import math
+#import teaching_ann
+
 ###################### BOARD/WINDOW ######################
 # Colours
 TILE_COLOR = (50, 50, 50)
@@ -35,7 +46,7 @@ TILT_SENSITIVITY = 10
 # On the next move snakes head will be moved by (x, y)
 NUMBER_OF_SNAKES = None
 UP, DOWN, LEFT, RIGHT = ((0,-1), (0,1), (-1,0), (1,0))
-
+ANN_MODEL = load_model("model.h5")
 
 
 class Snake:
@@ -48,6 +59,7 @@ class Snake:
         self.position = position
         for pos in position:
             BOARD[pos[1]][pos[0]] = id
+        self.head = lambda : position[-1]
         
         # Function which gets called when the snake needs to make a move.
         if moveDecider == "random":
@@ -56,6 +68,8 @@ class Snake:
             self.moveDecider = self.aiMove
         elif moveDecider == "qr":
             self.moveDecider = self.qrMove
+        elif moveDecider == "ann":
+            self.moveDecider = self.ANN_Move
 
     # All possible moves for snake, that, dont hit itself.
     def possibleMoves(self, startPos):
@@ -150,7 +164,46 @@ class Snake:
             return directions[int((directions.index(self.lastDirection) - tilt // abs(tilt)) % len(directions))]
         return self.lastDirection
 
+    def ANN_Move(self):
+        coordinatesAroundHead = [((self.head()[0] + direction[0])%BOARD_WIDTH, (self.head()[1] + direction[1])%BOARD_WIDTH) for direction in [UP, DOWN, LEFT, RIGHT]]
+        # 0/1 whether position is taken/open [UP, DOWN, LEFT, RIGHT]
+        openCoordinatesAroundHead = [1 if BOARD[pos[1]][pos[0]] == None else 0 for pos in coordinatesAroundHead]
+        directionToApple = math.atan2(FOOD_LOC[1]-self.head()[1], FOOD_LOC[0]-self.head()[0]) / math.pi
+        
+        vectorToApple = [None, None]
+        d_x = FOOD_LOC[0]-self.head()[0]
+        d_y = FOOD_LOC[1]-self.head()[1]
+        if d_x > 0:
+            vectorToApple[0] = 1
+        elif d_x < 0:
+            vectorToApple[0] = -1
+        else:
+            vectorToApple[0] = 0
+            
+        if d_y > 0:
+            vectorToApple[1] = 1
+        elif d_y < 0:
+            vectorToApple[1] = -1
+        else:
+            vectorToApple[1] = 0
 
+        moves = [UP, DOWN, LEFT, RIGHT]
+        movementChoices = []
+        for move in moves:
+            #movementChoices.append([*openCoordinatesAroundHead, directionToApple, *move])
+            movementChoices.append([*openCoordinatesAroundHead, *vectorToApple, *move])
+            #movementChoices.append([*vectorToApple, *move])
+        
+        # Force using cpu, since tensorflow for gpu is bugged.
+        import tensorflow as tf
+        with tf.device('/cpu:0'):
+            predictions = ANN_MODEL.predict(movementChoices)
+        bestMove = moves[np.argmax(predictions)]
+        
+        print([(x,y[0]) for x,y in zip(moves, predictions)])
+        return bestMove
+
+    
     # Moves the snake based on its moveDecider
     def move(self):
         direction = self.moveDecider()
@@ -249,16 +302,18 @@ def generateTrainData():
 
 def handleKeyPress():
     for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_1:
-                    return 1
-                elif event.key == pygame.K_2:
-                    return 2
-                elif event.key == pygame.K_RETURN:
-                    return 3
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_1:
+                return 1
+            elif event.key == pygame.K_2:
+                return 2
+            elif event.key == pygame.K_3:
+                return 3
+            elif event.key == pygame.K_RETURN:
+                return 3
 
 # All the snakes will be stored in array
 SNAKES = []
@@ -298,6 +353,8 @@ def main():
                     SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "ai"))
                 elif key == 2:
                     SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "qr"))
+                elif key == 3:
+                    SNAKES.append(Snake(1, [(1,1), (2,1), (3,1), (4,1), (5,1)], "ann"))
 
                 if NUMBER_OF_SNAKES == 1:
                     GAME_STATE = GameState.RUNNING
@@ -310,10 +367,12 @@ def main():
             if key:
                 snake_type = key
                 if key == 1:
-                    SNAKES.append(Snake(1, [(5,5), (6,5), (7,5), (8,5), (9,5)], "ai"))
+                    SNAKES.append(Snake(2, [(5,5), (6,5), (7,5), (8,5), (9,5)], "ai"))
                 elif key == 2:
-                    SNAKES.append(Snake(1, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
-
+                    SNAKES.append(Snake(2, [(5,5), (6,5), (7,5), (8,5), (9,5)], "qr"))
+                elif key == 3:
+                    SNAKES.append(Snake(2, [(5,5), (6,5), (7,5), (8,5), (9,5)], "ann"))
+                
                 GAME_STATE = GameState.RUNNING
 
         elif GAME_STATE == GameState.RUNNING:
@@ -402,8 +461,10 @@ def drawSelectSnakeScreen(snake_nr):
 
     label3 = myfont.render("1 - 1 A*", 1, (0,0,0), (245,245,245))
     label4 = myfont.render("2 - 2 QR reader", 1, (0,0,0), (245,245,245))
+    label5 = myfont.render("3 - 3 ANN", 1, (0,0,0), (245,245,245))
     SCREEN.blit(label3, (0, 40))
     SCREEN.blit(label4, (0, 60))
+    SCREEN.blit(label5, (0, 80))
 
 def drawEndScreen():
     myfont = pygame.font.SysFont("monospace", 40)
